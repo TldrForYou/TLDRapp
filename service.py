@@ -7,32 +7,10 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Response
 import requests
 import pdfplumber
 import io
+from inference import *
 load_dotenv()
 
 app = FastAPI()
-
-class Model:
-    def __init__(self, model_name, model_stage):
-        """
-
-        Args:
-            model_name:
-            model_stage:
-        """
-        self.model = mlflow.pyfunc.load_model(f"models:/{model_name}/{model_stage}")
-
-
-    def predict(self, data):
-        """
-
-        Args:
-            data:
-
-        Returns:
-
-        """
-        return self.model.predict(data)
-
 
 class PDFProcessor:
 
@@ -56,6 +34,9 @@ async def get_test_method(pdf_url: str):
     pdf = PDFProcessor()
     response = pdf.get_pdf_from_url(pdf_url)
     if response.status_code == 200:
-        return pdf.get_text_from_pdf_file(pdf_response=response)
+        extr_text = pdf.get_text_from_pdf_file(pdf_response=response)
+        input_url_model = "google/bigbird-pegasus-large-pubmed"
+        input_url_tokenizer = "google/bigbird-pegasus-large-pubmed"
+        return model_inference(input_url_tokenizer, input_url_model, extr_text)
     else:
         return Response(status_code=response.status_code)
